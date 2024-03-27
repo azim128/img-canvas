@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Image, Transformer } from "react-konva";
+import { Group, Image, Rect, Transformer } from "react-konva";
 import useImage from "use-image";
 
-const URLImage = ({ img, canvasWidth, canvasHeight }) => {
+const URLImage = ({ img, canvasWidth, canvasHeight, onDelete }) => {
   const [image, status] = useImage(img);
   const [isSelected, setIsSelected] = useState(false);
   const trRef = useRef();
   const imageRef = useRef();
+  const groupRef = useRef();
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -65,8 +66,50 @@ const URLImage = ({ img, canvasWidth, canvasHeight }) => {
     }
   }, [isSelected]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Delete" && isSelected) {
+        onDelete();
+      }
+      if (event.key === "Escape" && isSelected) {
+        setIsSelected(false);
+      }
+      if (event.key === "ArrowUp" && isSelected) {
+        setPosition((prev) => ({ ...prev, y: prev.y - 5 }));
+      }
+      if (event.key === "ArrowDown" && isSelected) {
+        setPosition((prev) => ({ ...prev, y: prev.y + 5 }));
+      }
+      if (event.key === "ArrowLeft" && isSelected) {
+        setPosition((prev) => ({ ...prev, x: prev.x - 5 }));
+      }
+      if (event.key === "ArrowRight" && isSelected) {
+        setPosition((prev) => ({ ...prev, x: prev.x + 5 }));
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isSelected, onDelete]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isSelected && !groupRef.current.getStage().clickStartShape) {
+        setIsSelected(false);
+      }
+    };
+
+    const stage = groupRef.current.getStage();
+    stage.container().addEventListener("click", handleClickOutside);
+
+    return () => {
+      stage.container().removeEventListener("click", handleClickOutside);
+    };
+  }, [isSelected]);
+
   return (
-    <>
+    <Group ref={groupRef}>
       <Image
         image={image}
         ref={imageRef}
@@ -100,7 +143,17 @@ const URLImage = ({ img, canvasWidth, canvasHeight }) => {
           onTransform={handleTransform}
         />
       )}
-    </>
+      {isSelected && (
+        <Rect
+          x={position.x + size.width - 20}
+          y={position.y - 20}
+          width={20}
+          height={20}
+          fill="red"
+          onClick={onDelete}
+        />
+      )}
+    </Group>
   );
 };
 

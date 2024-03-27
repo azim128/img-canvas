@@ -1,11 +1,12 @@
 import imglyRemoveBackground, { preload } from "@imgly/background-removal";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Layer, Stage } from "react-konva";
 import URLImage from "./URLImage";
 
 const CanvasApp = () => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -30,16 +31,23 @@ const CanvasApp = () => {
       } catch (error) {
         console.error("Error while processing image:", error);
       } finally {
-        setLoading(false); // Set loading to false when processing is done
+        setLoading(false);
+        console.log("Resetting file input");
+        fileInputRef.current.value = "";
+        console.log("Resetting file input");
       }
     };
 
     reader.readAsDataURL(file);
   };
 
+  const handleDeleteImage = () => {
+    setUploadedImage(null);
+  };
+
   return (
     <div className="py-5">
-      <input type="file" onChange={handleImageUpload} />
+      <input type="file" onChange={handleImageUpload} ref={fileInputRef}/>
       {loading && (
         <div className="w-[700px]  h-[400px] animate-pulse mx-auto mt-5">
           <div className="w-full h-full bg-gray-500 rounded-md flex justify-center align-middle">
@@ -59,6 +67,7 @@ const CanvasApp = () => {
                 img={uploadedImage}
                 canvasWidth={700}
                 canvasHeight={400}
+                onDelete={handleDeleteImage}
               />
             )}
           </Layer>
